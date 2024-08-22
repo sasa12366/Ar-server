@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Дополненная реальность</title>
+    <link rel="shortcut icon" href="./assets/img/favicon.ico" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./pages/main/main.css" />
+
+    <!-- import the webpage's javascript file -->
+    <script src="./components/header/header.js"></script>
+    <script src="./pages/main/main.js"></script>
+    <script src="./components/feedback/stickybutton.js"></script>
+  </head>
+
+  <body>
+    <page-header assetsUrl="assets"></page-header>
+    <div class="background">
+      <div class="content">
+        <p class="title">Дополненная реальность</p>
+        <p class="paragraph">
+          Вы можете создавать приложения дополненной реальности, основанные на метках или изображении, и развертывать их прямо в Интернете.
+          Это означает, что вам не нужно загружать какие-либо дополнительные приложения, чтобы получить доступ к своему приложению!
+          Работа в приложении также не требует каких-либо знаний в области программирования.
+          Вы можете начать создавать свой первый AR-проект прямо сейчас.
+        </p>
+
+        <img class="splashscreen" src="./assets/img/splashscreen.png" alt="Demo image home page"/>
+
+        <p class="lead">Выберите тип проекта</p>
+
+        <div>
+          <!--  <label class="radio-container paragraph">
+            <span class="radio-title">На основе изображения</span>
+            <input
+              id="location"
+              type="radio"
+              name="radio"
+              onclick="radioOnclick(this)"
+            />
+            <span>
+              Прикрепите свое творение к любому изображению, которое можно переместить в любое место.
+            </span>
+            <span class="checkmark"></span>
+          </label>-->
+
+          <label class="radio-container paragraph">
+            <span class="radio-title">На основе маркера</span>
+            <input
+              id="marker"
+              type="radio"
+              name="radio"
+              onclick="radioOnclick(this)"
+            />
+            <span>
+              Прикрепите свое творение к визуальному маркеру, который можно переместить в любое место.
+            </span>
+            <span class="checkmark"></span>
+          </label>
+
+          <div class="buttons-container">
+            <a onclick="anchorOnclick(this)" id="start-building" class="primary-button">Создать проект</a>
+          </div>
+          <feedback-button></feedback-button>
+          <div id="error" class="error" style="visibility: hidden;">
+            Пожалуйста, выберите тип проекта.
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

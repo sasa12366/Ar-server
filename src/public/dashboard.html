@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Все AR Объекты</title>
+    <link rel="stylesheet" href="styles2.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="user-info">
+            <img src="images/user.png" alt="User Avatar" class="avatar">
+            <div class="user-details">
+                <p>Александр</p>
+                <p>ovsyannikov48@mail.ru</p>
+            </div>
+        </div>
+        <button class="logout-button">Выход</button>
+    </div>
+    <div class="content">
+        <h1>Все AR Объекты</h1>
+        <div class="search-bar">
+            <input type="text" placeholder="Название">
+        </div>
+        <button class="add-button">Добавить</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Дата добавления</th>
+                    <th>AR метка</th>
+                    <th>Контент</th>
+                    <th>QR-код</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Курский гимн</td>
+                    <td>01.10.2023</td>
+                    <td><img src="images/marker-icon.png" alt="AR метка"></td>
+                    <td><img src="images/marker-icon.png" alt="asset.mp4"></td>
+                    <td><a href="path/to/qr-code.png" download><img src="images/download-icon.png" alt="Скачать QR-код"></a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.querySelector('.logout-button').addEventListener('click', function() {
+            window.location.href = "index.html";
+        });
+    </script>
+	<script>
+        document.querySelector('.add-button').addEventListener('click', function() {
+            window.location.href = "add.html";
+        });
+    </script>
+</body>
+</html>
