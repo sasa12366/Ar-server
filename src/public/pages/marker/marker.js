@@ -85,13 +85,26 @@ const zip = () => {
  * @param {event} event
  */
 const publish = () => {
-    // TODO: replace alerts with HTML error messages.
+    // Проверка необходимых данных
+    if (!window.markerImage) return alert('Пожалуйста, выберите изображение маркера');
+    if (!window.assetType) return alert('Пожалуйста, выберите тип контента');
+    if (!window.assetFile || !window.assetName) return alert('Пожалуйста, загрузите контент');
 
-    // TODO: replace alerts with HTML error messages.
-    if (!window.markerImage) return alert('please select a marker image');
-    if (!window.assetType) return alert('please select the correct content type');
-    if (!window.assetFile || !window.assetName) return alert('please upload a content');
+    // Определение типа контента на основе расширения файла
+    let contentType;
+    const fileExtension = window.assetName.split('.').pop().toLowerCase();
 
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+        contentType = 'Изображение';
+    } else if (['mp4'].includes(fileExtension)) {
+        contentType = 'Видео';
+    } else if (['gltf', 'glb', 'zip'].includes(fileExtension)) {
+        contentType = '3D Объект';
+    } else {
+        contentType = 'Неизвестный тип';
+    }
+
+    // Получение паттерна маркера
     MarkerModule.getMarkerPattern(window.markerImage)
         .then((markerPattern) => new Package({
             arType: 'pattern',
@@ -125,16 +138,108 @@ const publish = () => {
             if (response.ok) {
                 return response.json();
             } else {
-                throw new Error('Failed to send the package');
+                throw new Error('Не удалось отправить пакет');
             }
         })
         .then(data => {
-            console.log('Package created at:', data.folderName);
+            console.log('Пакет создан в папке:', data.folderName);
+
+            // Получение тени DOM футера и элемента project-name
+            const footerElement = document.querySelector('page-footer');
+            const footerShadow = footerElement ? footerElement.shadowRoot : null;
+            const projectNameInput = footerShadow ? footerShadow.querySelector('#project-name') : null;
+            const projectName = projectNameInput ? projectNameInput.value : 'Без названия';
+
+            // Создание полного URL для QR-кода
+            const qrCodeUrl = `${window.location.origin}/packages/${data.folderName}/index.html`;
+
+            const postData = {
+                fields: [
+                    { name: projectName },
+                    { added_date: new Date().toISOString().split('T')[0] }, // Пример даты в формате YYYY-MM-DD
+                    { ar_marker: 'Маркер' }, // Используйте правильный идентификатор маркера
+                    { content: contentType },
+                    { qr_code: qrCodeUrl }
+                ]
+            };
+
+            // Отправка данных о проекте в базу данных
+            return fetch('/api/objects/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postData)
+            });
+        })
+        .then(response => {
+            if (response.ok) {
+                // Показать сообщение об успешном добавлении
+                showSuccessMessage();
+            } else {
+                throw new Error('Не удалось добавить объект в базу данных');
+            }
         })
         .catch(error => {
-            console.error('Error:', error.message);
+            console.error('Ошибка:', error.message);
         });
 }
+
+/**
+ * Показывает сообщение об успешном добавлении проекта и перенаправляет пользователя на /dashboard после нажатия на кнопку "ОК".
+ */
+const showSuccessMessage = () => {
+    // Создание модального окна
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.left = '0';
+    modal.style.top = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.zIndex = '1000';
+
+    // Создание содержимого модального окна
+    const modalContent = document.createElement('div');
+    modalContent.style.backgroundColor = '#fff';
+    modalContent.style.padding = '20px';
+    modalContent.style.borderRadius = '8px';
+    modalContent.style.textAlign = 'center';
+
+    // Добавление текста сообщения
+    const message = document.createElement('p');
+    message.textContent = 'Проект успешно добавлен!';
+    modalContent.appendChild(message);
+
+    // Создание кнопки "ОК"
+    const okButton = document.createElement('button');
+    okButton.textContent = 'ОК';
+    okButton.style.marginTop = '10px';
+    okButton.style.padding = '10px 20px';
+    okButton.style.border = 'none';
+    okButton.style.backgroundColor = '#007bff';
+    okButton.style.color = '#fff';
+    okButton.style.borderRadius = '4px';
+    okButton.style.cursor = 'pointer';
+    okButton.addEventListener('click', () => {
+        // Закрытие модального окна
+        document.body.removeChild(modal);
+
+        // Перенаправление на /dashboard
+        window.location.href = '/dashboard';
+    });
+    modalContent.appendChild(okButton);
+
+    // Добавление содержимого в модальное окно
+    modal.appendChild(modalContent);
+
+    // Добавление модального окна на страницу
+    document.body.appendChild(modal);
+}
+
 
 zipButton.addEventListener('click', zip);
 githubButton.addEventListener('click', publish);

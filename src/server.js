@@ -22,6 +22,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.json());
 const upload = multer(); // Используем multer для обработки multipart/form-data
 // Handle POST request to create a package
+// Handle POST request to create a package
 app.post('/create-package', upload.single('zipFile'), async (req, res) => {
     try {
         if (!fs.existsSync('public/packages')) {
@@ -41,7 +42,10 @@ app.post('/create-package', upload.single('zipFile'), async (req, res) => {
                 throw new Error('Failed to extract zip file: ' + err.message);
             });
 
-        res.send({ folderName });
+        // Формируем URL для доступа к распакованному пакету
+        const packageUrl = `/packages/${folderName}`;
+
+        res.send({ folderName, packageUrl });
 
     } catch (error) {
         console.error('Error:', error.message);

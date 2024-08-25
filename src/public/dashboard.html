@@ -20,27 +20,21 @@
     <div class="content">
         <h1>Все AR Объекты</h1>
         <div class="search-bar">
-            <input type="text" placeholder="Название">
+            <input type="text" id="search-input" placeholder="Название">
         </div>
         <button class="add-button">Добавить</button>
-        <table>
+        <table id="objects-table">
             <thead>
                 <tr>
                     <th>Название</th>
                     <th>Дата добавления</th>
                     <th>AR метка</th>
                     <th>Контент</th>
-                    <th>QR-код</th>
+                    <th>Ссылка</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Курский гимн</td>
-                    <td>01.10.2023</td>
-                    <td><img src="images/marker-icon.png" alt="AR метка"></td>
-                    <td><img src="images/marker-icon.png" alt="asset.mp4"></td>
-                    <td><a href="path/to/qr-code.png" download><img src="images/download-icon.png" alt="Скачать QR-код"></a></td>
-                </tr>
+                <!-- Данные будут добавлены сюда динамически -->
             </tbody>
         </table>
     </div>
@@ -49,11 +43,84 @@
         document.querySelector('.logout-button').addEventListener('click', function() {
             window.location.href = "index.html";
         });
-    </script>
-	<script>
+
         document.querySelector('.add-button').addEventListener('click', function() {
             window.location.href = "add.html";
         });
+
+        async function fetchAndDisplayObjects() {
+            try {
+                const response = await fetch('/api/objects/');
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                const objects = await response.json();
+                const tableBody = document.querySelector('#objects-table tbody');
+                tableBody.innerHTML = ''; // Очищаем таблицу перед добавлением новых данных
+
+                objects.forEach(object => {
+                    const row = document.createElement('tr');
+                    
+                    // Форматирование даты
+                    const date = new Date(object.added_date);
+                    const formattedDate = date.toLocaleDateString('ru-RU', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+
+                    row.innerHTML = `
+                        <td>${object.name}</td>
+                        <td>${formattedDate}</td>
+                        <td>${object.ar_marker}</td>
+                        <td>${object.content ? object.content : 'Нет контента'}</td>
+                        <td>${object.qr_code ? object.qr_code : 'Нет QR-кода'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+                // Сохранение всех данных для фильтрации
+                window.allObjects = objects;
+                applySearch(); // Применяем фильтрацию при загрузке
+            } catch (error) {
+                console.error('Ошибка при загрузке объектов:', error);
+            }
+        }
+
+        function applySearch() {
+            const searchValue = document.querySelector('#search-input').value.toLowerCase();
+            const tableBody = document.querySelector('#objects-table tbody');
+            tableBody.innerHTML = ''; // Очищаем таблицу перед обновлением
+
+            window.allObjects.forEach(object => {
+                if (object.name.toLowerCase().includes(searchValue)) {
+                    const row = document.createElement('tr');
+                    
+                    // Форматирование даты
+                    const date = new Date(object.added_date);
+                    const formattedDate = date.toLocaleDateString('ru-RU', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+
+                    row.innerHTML = `
+                        <td>${object.name}</td>
+                        <td>${formattedDate}</td>
+                        <td>${object.ar_marker}</td>
+                        <td>${object.content ? object.content : 'Нет контента'}</td>
+                        <td>${object.qr_code ? object.qr_code : 'Нет QR-кода'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+
+        // Добавляем обработчик события для поля поиска
+        document.querySelector('#search-input').addEventListener('input', applySearch);
+
+        // Загружаем данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', fetchAndDisplayObjects);
     </script>
 </body>
 </html>

@@ -76,7 +76,11 @@ const FooterContent = `
     <p class="lead">
       3. Сохранить проект.
     </p>
-
+    <div class="pages-content-container">
+            <div class="pages-content-element">
+                <input id="project-name" type="text" placeholder="Введите название проекта" />
+            </div>
+        </div>
     
     <p class="paragraph">
    Если вы хотите разместить свой проект на другом сервере или в другой сети, вы можете скачать проект, содержащий сгенерированный код и все вспомогательные файлы.
