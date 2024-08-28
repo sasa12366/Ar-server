@@ -5,14 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Все AR Объекты</title>
     <link rel="stylesheet" href="styles2.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        .download-icon-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            position: relative;
+        }
+
+        .download-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .download-icon-container:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            z-index: 10;
+            font-size: 12px;
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: #000 transparent transparent transparent;
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar">
         <div class="user-info">
             <img src="images/user.png" alt="User Avatar" class="avatar">
             <div class="user-details">
-                <p>Александр</p>
-                <p>ovsyannikov48@mail.ru</p>
+                <p id="username"></p>
+                <p id="useremail"></p>
             </div>
         </div>
         <button class="logout-button">Выход</button>
@@ -31,6 +82,7 @@
                     <th>AR метка</th>
                     <th>Контент</th>
                     <th>Ссылка</th>
+                    <th>QR-код</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,34 +92,81 @@
     </div>
 
     <script>
-        document.querySelector('.logout-button').addEventListener('click', function() {
-            window.location.href = "index.html";
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем наличие токена доступа
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                // Если токена нет, перенаправляем на страницу авторизации
+                window.location.href = "index.html";
+                return;
+            }
 
-        document.querySelector('.add-button').addEventListener('click', function() {
+            // Загрузка информации о пользователе
+            const userName = localStorage.getItem('userName') || 'Александр'; // Здесь можно получить имя пользователя
+            const userPhone = localStorage.getItem('userPhone') || 'ovsyannikov48@mail.ru'; // Здесь можно получить номер телефона пользователя
+
+            document.getElementById('username').textContent = userName;
+            document.getElementById('useremail').textContent = userPhone;
+
+            // Загружаем и отображаем объекты AR
+            fetchAndDisplayObjects();
+
+            // Обработчик для выхода
+            document.querySelector('.logout-button').addEventListener('click', function() {
+                // Удаляем токены и данные пользователя, затем перенаправляем на страницу авторизации
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userPhone');
+                window.location.href = "index.html";
+            });
+            document.querySelector('.add-button').addEventListener('click', function() {
             window.location.href = "add.html";
+        });
         });
 
         async function fetchAndDisplayObjects() {
             try {
-                const response = await fetch('/api/objects/');
+                const response = await fetch('/api/objects/', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
                 if (!response.ok) {
                     throw new Error('Ошибка сети');
                 }
                 const objects = await response.json();
                 const tableBody = document.querySelector('#objects-table tbody');
-                tableBody.innerHTML = ''; // Очищаем таблицу перед добавлением новых данных
+                tableBody.innerHTML = ''; 
 
                 objects.forEach(object => {
                     const row = document.createElement('tr');
                     
-                    // Форматирование даты
                     const date = new Date(object.added_date);
                     const formattedDate = date.toLocaleDateString('ru-RU', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit'
                     });
+
+                    const qrCodeCell = document.createElement('td');
+                    const iconContainer = document.createElement('div');
+                    iconContainer.classList.add('download-icon-container');
+                    const downloadIcon = document.createElement('img');
+                    downloadIcon.src = 'images/download-icon.png';
+                    downloadIcon.classList.add('download-icon');
+                    downloadIcon.alt = 'Скачать QR-код';
+                    downloadIcon.onclick = function() {
+                        generateAndDownloadQRCode(object.qr_code, object.name);
+                    };
+
+                    const tooltip = document.createElement('div');
+                    tooltip.classList.add('tooltip');
+                    tooltip.textContent = 'Скачать';
+
+                    iconContainer.appendChild(downloadIcon);
+                    iconContainer.appendChild(tooltip);
+                    qrCodeCell.appendChild(iconContainer);
 
                     row.innerHTML = `
                         <td>${object.name}</td>
@@ -76,12 +175,12 @@
                         <td>${object.content ? object.content : 'Нет контента'}</td>
                         <td>${object.qr_code ? object.qr_code : 'Нет QR-кода'}</td>
                     `;
+                    row.appendChild(qrCodeCell);
                     tableBody.appendChild(row);
                 });
 
-                // Сохранение всех данных для фильтрации
                 window.allObjects = objects;
-                applySearch(); // Применяем фильтрацию при загрузке
+                applySearch();
             } catch (error) {
                 console.error('Ошибка при загрузке объектов:', error);
             }
@@ -90,19 +189,37 @@
         function applySearch() {
             const searchValue = document.querySelector('#search-input').value.toLowerCase();
             const tableBody = document.querySelector('#objects-table tbody');
-            tableBody.innerHTML = ''; // Очищаем таблицу перед обновлением
+            tableBody.innerHTML = '';
 
             window.allObjects.forEach(object => {
                 if (object.name.toLowerCase().includes(searchValue)) {
                     const row = document.createElement('tr');
                     
-                    // Форматирование даты
                     const date = new Date(object.added_date);
                     const formattedDate = date.toLocaleDateString('ru-RU', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit'
                     });
+
+                    const qrCodeCell = document.createElement('td');
+                    const iconContainer = document.createElement('div');
+                    iconContainer.classList.add('download-icon-container');
+                    const downloadIcon = document.createElement('img');
+                    downloadIcon.src = 'images/download-icon.png';
+                    downloadIcon.classList.add('download-icon');
+                    downloadIcon.alt = 'Скачать QR-код';
+                    downloadIcon.onclick = function() {
+                        generateAndDownloadQRCode(object.qr_code, object.name);
+                    };
+
+                    const tooltip = document.createElement('div');
+                    tooltip.classList.add('tooltip');
+                    tooltip.textContent = 'Скачать';
+
+                    iconContainer.appendChild(downloadIcon);
+                    iconContainer.appendChild(tooltip);
+                    qrCodeCell.appendChild(iconContainer);
 
                     row.innerHTML = `
                         <td>${object.name}</td>
@@ -111,16 +228,34 @@
                         <td>${object.content ? object.content : 'Нет контента'}</td>
                         <td>${object.qr_code ? object.qr_code : 'Нет QR-кода'}</td>
                     `;
+                    row.appendChild(qrCodeCell);
                     tableBody.appendChild(row);
                 }
             });
         }
 
-        // Добавляем обработчик события для поля поиска
-        document.querySelector('#search-input').addEventListener('input', applySearch);
+        function generateAndDownloadQRCode(link, name) {
+            const tempDiv = document.createElement('div');
+            document.body.appendChild(tempDiv);
 
-        // Загружаем данные при загрузке страницы
-        document.addEventListener('DOMContentLoaded', fetchAndDisplayObjects);
+            const qrCode = new QRCode(tempDiv, {
+                text: link,
+                width: 200,
+                height: 200,
+            });
+
+            setTimeout(() => {
+                const qrCodeCanvas = tempDiv.querySelector('canvas');
+                qrCodeCanvas.toBlob(function(blob) {
+                    saveAs(blob, `${name}_qrcode.png`);
+                });
+
+                document.body.removeChild(tempDiv);
+            }, 500);
+        }
+
+        document.querySelector('#search-input').addEventListener('input', applySearch);
     </script>
+    
 </body>
 </html>

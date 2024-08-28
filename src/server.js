@@ -14,14 +14,10 @@ const { routeInit } = require("./presentation-layer/routes");
 app.use(express.static('public'));
 routeInit(app, express);
 
-// Serve static files from the "public" directory
-
-
 // Parse JSON requests
 app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.json());
 const upload = multer(); // Используем multer для обработки multipart/form-data
-// Handle POST request to create a package
 // Handle POST request to create a package
 app.post('/create-package', upload.single('zipFile'), async (req, res) => {
     try {
