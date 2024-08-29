@@ -61,7 +61,7 @@ const StickyButton = `
       }
     </style>
 
-    <a id="stickyBtn" class="sticky-button" target="_blank" href="https://forms.gle/WyaKpYQsSxfh8p4k8" >
+    <a id="stickyBtn" class="sticky-button" target="_blank" href="https://forms.yandex.ru/u/66d0187c5056905a0c380acf/" >
       <span class="icono-mail"></span> Связаться с разработчиками
     </a>
 `;
